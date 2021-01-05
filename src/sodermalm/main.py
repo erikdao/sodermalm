@@ -1,17 +1,17 @@
 import logging
 
 from fastapi import FastAPI
+from starlette.applications import Starlette
+
+from sodermalm.api import api_router
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+# Create the starlette ASGI for the app
+app = Starlette()
 
+# Create the API framework
+api = FastAPI()
+api.include_router(api_router, prefix='/v1')
 
-@app.get('/')
-async def index():
-    return {'key': 'value'}
-
-
-@app.get('/healthcheck')
-async def health_check():
-    return {'status': 'OK'}
+app.mount('/api', app=api)

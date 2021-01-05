@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "sodermalm"
+version = "0.1.0"
+description = "The server-side app for Data Studio"
+authors = ["erikdao <cuong@neuraltalks.io>"]
+license = "ISC"
+
+[tool.poetry.dependencies]
+python = "^3.6.9"
+fastapi = "^0.63.0"
+SQLAlchemy = "^1.3.22"
+uvicorn = "^0.13.3"
+typing-extensions = "^3.7.4"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.1"
+flake8 = "^3.8.4"
+autopep8 = "^1.5.4"
+isort = "^5.7.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -56,6 +56,22 @@ def show_config():
     click.secho(tabulate(table, headers=['Key', 'Value']), fg='blue')
 
 
+@sodermalm_server.command('routes')
+def show_routes():
+    """Prints all available routes."""
+    from sodermalm.main import api_router
+
+    table = []
+    for r in api_router.routes:
+        auth = False
+        for d in r.dependencies:
+            if d.dependency.__name__ == 'get_current_user':
+                auth = True
+        table.append([r.path, auth, ','.join(r.methods)])
+
+    click.secho(tabulate(table, headers=['Path', 'Authenticated', 'Methods']), fg='blue')
+
+
 def entry():
     try:
         sodermalm_cli()

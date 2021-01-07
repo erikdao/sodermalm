@@ -19,4 +19,4 @@ $ poetry run uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 ---
 
-🌝 \* Curious about Södermalm, check it [here](https://en.wikipedia.org/wiki/S%C3%B6dermalm)
+🌝 Curious about Södermalm, check it [here](https://en.wikipedia.org/wiki/S%C3%B6dermalm)

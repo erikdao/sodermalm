@@ -22,7 +22,7 @@ def get_revision():
         os.path.join(package_dir, os.pardir, os.pardir))
     path = os.path.join(checkout_dir)
     if os.path.exists(path):
-        _get_git_revision(path)
+        return _get_git_revision(path)
     return None
 
 

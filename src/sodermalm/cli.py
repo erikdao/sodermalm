@@ -1,6 +1,9 @@
+import os
 import logging
 
 import click
+from alembic import command as alembic_command
+from alembic.config import Config as AlembicConfig
 from tabulate import tabulate
 
 from sodermalm import config
@@ -21,6 +24,12 @@ def sodermalm_database():
     pass
 
 
+def sync_triggers():
+    from sqlalchemy_searchable import sync_trigger
+
+    sync_trigger(engine, 'user', 'search_vector', ['email'])
+
+
 @sodermalm_database.command('init')
 def init_database():
     """Initializes a new database."""
@@ -29,8 +38,88 @@ def init_database():
     if not database_exists(str(config.SQLALCHEMY_DATABASE_URI)):
         create_database(str(config.SQLALCHEMY_DATABASE_URI))
     Base.metadata.create_all(engine)
+    alembic_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'alembic.ini')
+    alembic_cfg = AlembicConfig(alembic_path)
+    alembic_command.stamp(alembic_cfg, 'head')
+
+    sync_triggers()
 
     click.secho('Success.', fg='green')
+
+
+@sodermalm_database.command('upgrade')
+@click.option(
+    '--tag', default=None, help="Arbitrary 'tag' name - can be used by custom env.py scripts."
+)
+@click.option(
+    '--sql',
+    is_flag=True,
+    default=False,
+    help="Don't emit SQL to database, dump to standard output instead"
+)
+@click.option('--revision', nargs=1, default='head', help='Revision identifier.')
+def upgrade_database(tag, sql, revision):
+    """Upgrades database schema to newest version."""
+    from sqlalchemy_utils import database_exists, create_database
+    from alembic.runtime.migration import MigrationContext
+
+    alembic_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'alembic.ini')
+    alembic_cfg = AlembicConfig(alembic_path)
+    if not database_exists(str(config.SQLALCHEMY_DATABASE_URI)):
+        create_database(str(config.SQLALCHEMY_DATABASE_URI))
+        Base.metadata.create_all(engine)
+        alembic_command.stamp(alembic_cfg, 'head')
+    else:
+        conn = engine.connect()
+        context = MigrationContext.configure(conn)
+        current_rev = context.get_current_revision()
+        if not current_rev:
+            Base.metadata.create_all(engine)
+            alembic_command.stamp(alembic_cfg, 'head')
+        else:
+            alembic_command.upgrade(alembic_cfg, revision, sql=sql, tag=tag)
+
+    sync_triggers()
+    click.secho('Success', fg='green')
+
+
+@sodermalm_database.command('heads')
+def head_database():
+    """Shows the heads of the database"""
+    alembic_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'alembic.ini')
+    alembic_cfg = AlembicConfig(alembic_path)
+    alembic_command.heads(alembic_cfg)
+
+
+@sodermalm_database.command('history')
+def history_database():
+    """Shows the history of the database"""
+    alembic_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'alembic.ini')
+    alembic_cfg = AlembicConfig(alembic_path)
+    alembic_command.history(alembic_cfg)
+
+
+@sodermalm_database.command("downgrade")
+@click.option(
+    "--tag", default=None, help="Arbitrary 'tag' name - can be used by custom env.py scripts."
+)
+@click.option(
+    "--sql",
+    is_flag=True,
+    default=False,
+    help="Don't emit SQL to database - dump to standard output instead.",
+)
+@click.option("--revision", nargs=1, default="head", help="Revision identifier.")
+def downgrade_database(tag, sql, revision):
+    """Downgrades database schema to next newest version."""
+    alembic_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "alembic.ini")
+    alembic_cfg = AlembicConfig(alembic_path)
+
+    if sql and revision == "-1":
+        revision = "head:-1"
+
+    alembic_command.downgrade(alembic_cfg, revision, sql=sql, tag=tag)
+    click.secho("Success.", fg="green")
 
 
 @sodermalm_cli.group('server')

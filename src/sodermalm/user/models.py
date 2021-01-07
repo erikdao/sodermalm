@@ -16,6 +16,7 @@ class User(Base, TimeStampMixin):
     # For now, a user has a single role - this will likely be refactored later
     role = Column(String, default=UserRoles.user)
     firebase_id = Column(String, nullable=True)
+    profile_image = Column(String, nullable=True)
 
     search_vector = Column(TSVectorType('email', weights={'email': 'A'}))
 
@@ -34,6 +35,7 @@ class UserBase(ORMBase):
 class UserRead(UserBase):
     id: int
     firebase_id: Optional[str]
+    profile_image: Optional[str]
 
 
 class UserPagination(ORMBase):
